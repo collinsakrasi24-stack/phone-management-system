@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Phone Shop Management</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+<div class="container mx-auto px-4 py-8 max-w-7xl">
+  <header class="bg-red-700 text-white rounded-xl shadow-lg p-6 mb-10 flex flex-col sm:flex-row justify-between items-center gap-4">
+    <div class="text-center sm:text-left">
+      <h1 class="text-3xl md:text-4xl font-bold">📱 Phone Shop Management</h1>
+      <p class="mt-1 text-blue-100">Inventory & Customer Management</p>
+    </div>
+    <div class="flex flex-wrap gap-3 justify-center sm:justify-end">
+      <button id="btn-add-product" class="bg-white text-blue-700 px-5 py-2.5 rounded-lg font-semibold hover:bg-gray-100 transition">+ Product</button>
+      <button id="btn-add-customer" class="bg-white text-blue-700 px-5 py-2.5 rounded-lg font-semibold hover:bg-gray-100 transition">+ Customer</button>
+      <button id="btn-record-sale" class="bg-blue-500 text-white px-5 py-2.5 rounded-lg font-semibold hover:bg-green-600 transition">💰 Record Sale</button>
+    </div>
+  </header>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-10">
+    <div class="bg-white p-6 rounded-xl shadow text-center">
+      <p class="text-gray-600 font-medium">Products</p>
+      <p id="stat-total-products" class="text-4xl font-bold text-blue-700 mt-1">0</p>
+    </div>
+    <div class="bg-white p-6 rounded-xl shadow text-center">
+      <p class="text-gray-600 font-medium">Low Stock</p>
+      <p id="stat-low-stock" class="text-4xl font-bold text-orange-600 mt-1">0</p>
+    </div>
+    <div class="bg-white p-6 rounded-xl shadow text-center">
+      <p class="text-gray-600 font-medium">Customers</p>
+      <p id="stat-total-customers" class="text-4xl font-bold text-purple-700 mt-1">0</p>
+    </div>
+    <div class="bg-white p-6 rounded-xl shadow text-center">
+      <p class="text-gray-600 font-medium">Total Sales</p>
+      <p id="stat-total-sales" class="text-4xl font-bold text-indigo-700 mt-1">0</p>
+    </div>
+    <div class="bg-white p-6 rounded-xl shadow text-center">
+      <p class="text-gray-600 font-medium">Revenue (GH₵)</p>
+      <p id="stat-revenue" class="text-4xl font-bold text-green-600 mt-1">0</p>
+    </div>
+  </div>
+
+  <section class="bg-white rounded-xl shadow mb-10 p-6">
+    <h2 class="text-2xl font-bold text-gray-800 mb-5">Products</h2>
+    <div class="mb-6 flex flex-col sm:flex-row gap-3">
+      <input type="text" id="product-search" placeholder="Search model or brand..." class="flex-1 px-4 py-2 border rounded-lg">
+      <select id="product-stock-filter" class="px-4 py-2 border rounded-lg min-w-[140px]">
+        <option value="">All stock</option>
+        <option value="low">Low (≤20)</option>
+        <option value="out">Out of stock</option>
+      </select>
+      <button type="button" id="product-clear" class="px-5 py-2 bg-gray-200 rounded-lg hover:bg-gray-300">Clear</button>
+    </div>
+    <div id="products-list" class="min-h-[160px] overflow-x-auto">
+      <p class="text-gray-500 text-center py-10">Loading...</p>
+    </div>
+  </section>
+
+  <section class="bg-white rounded-xl shadow mb-10 p-6">
+    <h2 class="text-2xl font-bold text-gray-800 mb-5">Customers</h2>
+    <div class="mb-6 flex flex-col sm:flex-row gap-3">
+      <input type="text" id="customer-search" placeholder="Search name or email..." class="flex-1 px-4 py-2 border rounded-lg">
+      <button type="button" id="customer-clear" class="px-5 py-2 bg-gray-200 rounded-lg hover:bg-gray-300">Clear</button>
+    </div>
+    <div id="customers-list" class="min-h-[160px] overflow-x-auto">
+      <p class="text-gray-500 text-center py-10">Loading...</p>
+    </div>
+  </section>
+
+  <section class="bg-white rounded-xl shadow mb-10 p-6">
+    <h2 class="text-2xl font-bold text-gray-800 mb-5">Sales History</h2>
+    <div id="sales-list" class="min-h-[160px] overflow-x-auto">
+      <p class="text-gray-500 text-center py-10">Loading...</p>
+    </div>
+  </section>
+</div>
+
+<!-- Product Modal -->
+<div id="modal-product" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center z-50">
+  <div class="bg-white rounded-xl p-8 w-full max-w-lg mx-4 shadow-2xl">
+    <h3 class="text-2xl font-bold mb-6">Add Product</h3>
+    <form id="form-product">
+      <div class="space-y-5">
+        <input type="text" name="name" placeholder="Model (e.g. iPhone 15 Pro)" class="w-full border p-3 rounded-lg" required>
+        <input type="text" name="brand" placeholder="Brand (e.g. Apple)" class="w-full border p-3 rounded-lg" required>
+        <select name="category" class="w-full border p-3 rounded-lg" required>
+          <option value="">Select Category</option>
+          <option value="Phone">Phone</option>
+          <option value="Accessory">Accessory</option>
+          <option value="Case">Case</option>
+          <option value="Charger">Charger</option>
+          <option value="Screen Protector">Screen Protector</option>
+          <option value="Headphones">Headphones</option>
+        </select>
+        <input type="number" name="price" step="0.01" placeholder="Price (GH₵)" class="w-full border p-3 rounded-lg" required min="0">
+        <input type="number" name="stock" placeholder="Initial Stock" class="w-full border p-3 rounded-lg" required min="0">
+      </div>
+      <div class="mt-8 flex justify-end gap-4">
+        <button type="button" id="btn-cancel-product" class="px-6 py-2.5 text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
+        <button type="submit" class="bg-blue-700 text-white px-8 py-2.5 rounded-lg font-semibold hover:bg-blue-800">Save Product</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Customer Modal -->
+<div id="modal-customer" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center z-50">
+  <div class="bg-white rounded-xl p-8 w-full max-w-lg mx-4 shadow-2xl">
+    <h3 class="text-2xl font-bold mb-6">Add Customer</h3>
+    <form id="form-customer">
+      <div class="space-y-5">
+        <input type="text" name="name" placeholder="Full Name" class="w-full border p-3 rounded-lg" required>
+        <input type="tel" name="phone" placeholder="Phone (e.g. 0241234567)" class="w-full border p-3 rounded-lg" required>
+        <input type="email" name="email" placeholder="Email" class="w-full border p-3 rounded-lg" required>
+      </div>
+      <div class="mt-8 flex justify-end gap-4">
+        <button type="button" id="btn-cancel-customer" class="px-6 py-2.5 text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
+        <button type="submit" class="bg-blue-700 text-white px-8 py-2.5 rounded-lg font-semibold hover:bg-blue-800">Save Customer</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Sale Modal -->
+<div id="modal-sale" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center z-50">
+  <div class="bg-white rounded-xl p-8 w-full max-w-lg mx-4 shadow-2xl max-h-[90vh] overflow-y-auto">
+    <h3 class="text-2xl font-bold mb-6">💰 Record Sale</h3>
+    <form id="form-sale">
+      <div class="space-y-5">
+        <div>
+          <label class="block text-sm font-medium mb-2">Select Customer *</label>
+          <select name="customer_id" id="sale-customer" class="w-full border p-3 rounded-lg" required>
+            <option value="">Choose a customer...</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium mb-2">Select Product *</label>
+          <select name="product_id" id="sale-product" class="w-full border p-3 rounded-lg" required>
+            <option value="">Choose a product...</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium mb-2">Quantity *</label>
+          <input type="number" name="quantity" id="sale-quantity" placeholder="Enter quantity" class="w-full border p-3 rounded-lg" required min="1" value="1">
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium mb-2">Payment Method</label>
+          <select name="payment_method" class="w-full border p-3 rounded-lg">
+            <option value="Cash">Cash</option>
+            <option value="Mobile Money">Mobile Money</option>
+            <option value="Card">Card</option>
+            <option value="Bank Transfer">Bank Transfer</option>
+          </select>
+        </div>
+        
+        <div>
+          <label class="block text-sm font-medium mb-2">Sale Date *</label>
+          <input type="date" name="sale_date" id="sale-date" class="w-full border p-3 rounded-lg" required>
+        </div>
+        
+        <div id="sale-summary" class="bg-gradient-to-r from-green-50 to-blue-50 p-5 rounded-lg border-2 border-green-200 hidden">
+          <p class="font-bold text-lg text-gray-800 mb-3">📊 Sale Summary</p>
+          <div class="space-y-2 text-sm">
+            <p class="flex justify-between"><span class="text-gray-600">Product:</span> <span id="summary-product" class="font-medium">-</span></p>
+            <p class="flex justify-between"><span class="text-gray-600">Price:</span> <span class="font-medium">GH₵<span id="summary-price">0.00</span></span></p>
+            <p class="flex justify-between"><span class="text-gray-600">Quantity:</span> <span id="summary-quantity" class="font-medium">0</span></p>
+            <p class="flex justify-between"><span class="text-gray-600">Available Stock:</span> <span id="summary-stock" class="font-medium text-orange-600">0</span></p>
+            <hr class="my-2 border-gray-300">
+            <p class="flex justify-between text-lg"><span class="font-bold text-gray-800">Total Amount:</span> <span class="font-bold text-green-600">GH₵<span id="summary-total">0.00</span></span></p>
+          </div>
+        </div>
+      </div>
+      <div class="mt-8 flex justify-end gap-4">
+        <button type="button" id="btn-cancel-sale" class="px-6 py-2.5 text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
+        <button type="submit" class="bg-green-600 text-white px-8 py-2.5 rounded-lg font-semibold hover:bg-green-700">Complete Sale</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+let allProducts = [];
+let allCustomers = [];
+let allSales = [];
+
+function openModal(id) {
+  document.getElementById(id).classList.remove('hidden');
+  document.getElementById(id).classList.add('flex');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.add('hidden');
+  document.getElementById(id).classList.remove('flex');
+}
+
+async function loadStats() {
+  const res = await fetch('api.php?action=stats');
+  const data = await res.json();
+  document.getElementById('stat-total-products').textContent = data.products;
+  document.getElementById('stat-low-stock').textContent = data.low_stock;
+  document.getElementById('stat-total-customers').textContent = data.customers;
+  document.getElementById('stat-total-sales').textContent = data.sales || 0;
+  document.getElementById('stat-revenue').textContent = parseFloat(data.revenue || 0).toFixed(2);
+}
+
+async function loadProducts() {
+  const res = await fetch('api.php?action=products');
+  allProducts = await res.json();
+  renderProducts();
+  populateProductDropdown();
+}
+
+async function loadCustomers() {
+  const res = await fetch('api.php?action=customers');
+  allCustomers = await res.json();
+  renderCustomers();
+  populateCustomerDropdown();
+}
+
+async function loadSales() {
+  const res = await fetch('api.php?action=sales');
+  allSales = await res.json();
+  renderSales();
+}
+
+function populateCustomerDropdown() {
+  const select = document.getElementById('sale-customer');
+  select.innerHTML = '<option value="">Choose a customer...</option>';
+  allCustomers.forEach(c => {
+    select.innerHTML += `<option value="${c.id}">${c.name} - ${c.phone}</option>`;
+  });
+}
+
+function populateProductDropdown() {
+  const select = document.getElementById('sale-product');
+  select.innerHTML = '<option value="">Choose a product...</option>';
+  allProducts.forEach(p => {
+    const stockInfo = p.stock > 0 ? `(Stock: ${p.stock})` : '(Out of Stock)';
+    const disabled = p.stock <= 0 ? 'disabled' : '';
+    select.innerHTML += `<option value="${p.id}" ${disabled} data-price="${p.price}" data-stock="${p.stock}" data-name="${p.name}">${p.name} - GH₵${parseFloat(p.price).toFixed(2)} ${stockInfo}</option>`;
+  });
+}
+
+function updateSaleSummary() {
+  const productSelect = document.getElementById('sale-product');
+  const quantityInput = document.getElementById('sale-quantity');
+  const selectedOption = productSelect.options[productSelect.selectedIndex];
+  
+  if(productSelect.value && selectedOption.dataset.price) {
+    const price = parseFloat(selectedOption.dataset.price);
+    const stock = parseInt(selectedOption.dataset.stock);
+    const quantity = parseInt(quantityInput.value) || 0;
+    const total = price * quantity;
+    
+    document.getElementById('summary-product').textContent = selectedOption.dataset.name;
+    document.getElementById('summary-price').textContent = price.toFixed(2);
+    document.getElementById('summary-quantity').textContent = quantity;
+    document.getElementById('summary-total').textContent = total.toFixed(2);
+    document.getElementById('summary-stock').textContent = stock;
+    document.getElementById('sale-summary').classList.remove('hidden');
+    
+    if(quantity > stock) {
+      quantityInput.setCustomValidity('Quantity exceeds available stock');
+      document.getElementById('summary-stock').classList.add('text-red-600');
+      document.getElementById('summary-stock').classList.remove('text-orange-600');
+    } else {
+      quantityInput.setCustomValidity('');
+      document.getElementById('summary-stock').classList.remove('text-red-600');
+      document.getElementById('summary-stock').classList.add('text-orange-600');
+    }
+  } else {
+    document.getElementById('sale-summary').classList.add('hidden');
+  }
+}
+
+function renderProducts() {
+  const search = document.getElementById('product-search').value.toLowerCase();
+  const stockFilter = document.getElementById('product-stock-filter').value;
+  let filtered = allProducts.filter(p => 
+    p.name.toLowerCase().includes(search) || p.brand.toLowerCase().includes(search)
+  );
+  if (stockFilter === 'low') filtered = filtered.filter(p => p.stock > 0 && p.stock <= 20);
+  if (stockFilter === 'out') filtered = filtered.filter(p => p.stock == 0);
+  const container = document.getElementById('products-list');
+  if (filtered.length === 0) {
+    container.innerHTML = '<p class="text-gray-500 text-center py-10">No products found</p>';
+    return;
+  }
+  let html = '<table class="w-full min-w-[600px]"><thead><tr class="border-b bg-gray-50">';
+  html += '<th class="text-left p-3">ID</th><th class="text-left p-3">Name</th><th class="text-left p-3">Brand</th><th class="text-left p-3">Category</th><th class="text-right p-3">Price</th><th class="text-right p-3">Stock</th></tr></thead><tbody>';
+  filtered.forEach(p => {
+    const stockClass = p.stock == 0 ? 'bg-red-200 text-red-900' : p.stock <= 20 ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700';
+    html += `<tr class="border-b hover:bg-gray-50"><td class="p-3">${p.id}</td><td class="p-3 font-medium">${p.name}</td><td class="p-3">${p.brand}</td><td class="p-3">${p.category}</td><td class="p-3 text-right font-semibold">GH₵${parseFloat(p.price).toFixed(2)}</td><td class="p-3 text-right"><span class="px-2 py-1 rounded text-sm font-medium ${stockClass}">${p.stock}</span></td></tr>`;
+  });
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+function renderCustomers() {
+  const search = document.getElementById('customer-search').value.toLowerCase();
+  const filtered = allCustomers.filter(c => c.name.toLowerCase().includes(search) || c.email.toLowerCase().includes(search));
+  const container = document.getElementById('customers-list');
+  if (filtered.length === 0) {
+    container.innerHTML = '<p class="text-gray-500 text-center py-10">No customers found</p>';
+    return;
+  }
+  let html = '<table class="w-full min-w-[600px]"><thead><tr class="border-b bg-gray-50"><th class="text-left p-3">ID</th><th class="text-left p-3">Name</th><th class="text-left p-3">Phone</th><th class="text-left p-3">Email</th></tr></thead><tbody>';
+  filtered.forEach(c => {
+    html += `<tr class="border-b hover:bg-gray-50"><td class="p-3">${c.id}</td><td class="p-3 font-medium">${c.name}</td><td class="p-3">${c.phone}</td><td class="p-3">${c.email}</td></tr>`;
+  });
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+function renderSales() {
+  const container = document.getElementById('sales-list');
+  if (allSales.length === 0) {
+    container.innerHTML = '<p class="text-gray-500 text-center py-10">No sales recorded yet</p>';
+    return;
+  }
+  let html = '<table class="w-full min-w-[700px]"><thead><tr class="border-b bg-gray-50"><th class="text-left p-3">ID</th><th class="text-left p-3">Date</th><th class="text-left p-3">Customer</th><th class="text-left p-3">Products</th><th class="text-left p-3">Payment</th><th class="text-right p-3">Total</th></tr></thead><tbody>';
+  allSales.forEach(s => {
+    html += `<tr class="border-b hover:bg-gray-50"><td class="p-3">#${s.sale_id}</td><td class="p-3">${s.sale_date}</td><td class="p-3 font-medium">${s.customer_name}</td><td class="p-3 text-sm">${s.products || 'N/A'}</td><td class="p-3"><span class="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">${s.payment_method}</span></td><td class="p-3 text-right font-bold text-green-600">GH₵${parseFloat(s.total_amount).toFixed(2)}</td></tr>`;
+  });
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+document.getElementById('btn-add-product').onclick = () => openModal('modal-product');
+document.getElementById('btn-add-customer').onclick = () => openModal('modal-customer');
+document.getElementById('btn-record-sale').onclick = () => {
+  document.getElementById('form-sale').reset();
+  document.getElementById('sale-summary').classList.add('hidden');
+  document.getElementById('sale-date').value = new Date().toISOString().split('T')[0];
+  openModal('modal-sale');
+};
+document.getElementById('btn-cancel-product').onclick = () => closeModal('modal-product');
+document.getElementById('btn-cancel-customer').onclick = () => closeModal('modal-customer');
+document.getElementById('btn-cancel-sale').onclick = () => closeModal('modal-sale');
+document.getElementById('product-search').oninput = renderProducts;
+document.getElementById('product-stock-filter').onchange = renderProducts;
+document.getElementById('product-clear').onclick = () => {
+  document.getElementById('product-search').value = '';
+  document.getElementById('product-stock-filter').value = '';
+  renderProducts();
+};
+document.getElementById('customer-search').oninput = renderCustomers;
+document.getElementById('customer-clear').onclick = () => {
+  document.getElementById('customer-search').value = '';
+  renderCustomers();
+};
+document.getElementById('sale-product').onchange = updateSaleSummary;
+document.getElementById('sale-quantity').oninput = updateSaleSummary;
+
+document.getElementById('form-product').onsubmit = async (e) => {
+  e.preventDefault();
+  const formData = new FormData(e.target);
+  const res = await fetch('api.php?action=add_product', { method: 'POST', body: formData });
+  const json = await res.json();
+  alert(json.success ? json.message : 'Error: ' + json.message);
+  if (json.success) {
+    closeModal('modal-product');
+    e.target.reset();
+    await Promise.all([loadProducts(), loadStats()]);
+  }
+};
+
+document.getElementById('form-customer').onsubmit = async (e) => {
+  e.preventDefault();
+  const formData = new FormData(e.target);
+  const res = await fetch('api.php?action=add_customer', { method: 'POST', body: formData });
+  const json = await res.json();
+  alert(json.success ? json.message : 'Error: ' + json.message);
+  if (json.success) {
+    closeModal('modal-customer');
+    e.target.reset();
+    await Promise.all([loadCustomers(), loadStats()]);
+  }
+};
+
+document.getElementById('form-sale').onsubmit = async (e) => {
+  e.preventDefault();
+  const formData = new FormData(e.target);
+  const res = await fetch('api.php?action=add_sale', { method: 'POST', body: formData });
+  const json = await res.json();
+  if (json.success) {
+    alert(`✅ ${json.message}\n\nSale ID: #${json.sale_id}\nTotal: GH₵${json.total.toFixed(2)}`);
+    closeModal('modal-sale');
+    e.target.reset();
+    await Promise.all([loadProducts(), loadStats(), loadSales()]);
+  } else {
+    alert('❌ Error: ' + json.message);
+  }
+};
+
+Promise.all([loadStats(), loadProducts(), loadCustomers(), loadSales()]);
+document.getElementById('sale-date').value = new Date().toISOString().split('T')[0];
+</script>
+</body>
+</html>10.40.
